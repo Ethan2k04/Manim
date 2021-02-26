@@ -1,10 +1,9 @@
 from manimlib.imports import *
 import pymunk
 
-
 class PhysicsBody(Animation):
     CONFIG = {
-        "rate_func": linear
+        "rate_func" : linear
     }
 
     def __init__(self, mobject, pos_and_rot, **kwargs):
@@ -21,30 +20,29 @@ class PhysicsBody(Animation):
         self.mobject.rotate(rot - self.angle)
         self.angle = rot
 
-
 class PhysicTest(Scene):
     def construct(self):
         space = pymunk.Space()
-        space.gravity = 0, -9820
+        space.gravity = 0,-9820
 
         ground = space.static_body
         grd_seg = pymunk.Segment(ground, (-10000, -2000), (10000, -2000), 0)
-        grd_seg.friction = 0.1
+        grd_seg.friction = 0.8
         space.add(grd_seg)
-        # space.add(ground, grd_box)
+        #space.add(ground, grd_box)
 
         mass = 10
-        size = (1000, 1000)
+        size=(1000,1000)
         moment = pymunk.moment_for_box(mass, size)
         body = pymunk.Body(mass, moment)
         body.angle = 0.1
         body.position = 0, 3000
-
+        
         box = pymunk.Poly.create_box(body, size)
         box.elasticity = 0
         box.friction = 0.5
         space.add(body, box)
-
+        
         shape = Square()
         shape.stretch_to_fit_height(1)
         shape.stretch_to_fit_width(1)
@@ -52,12 +50,12 @@ class PhysicTest(Scene):
         body2 = pymunk.Body(mass, moment)
         body2.angle = -0.1
         body2.position = 800, 4500
-
+        
         box2 = pymunk.Poly.create_box(body2, size)
         box2.elasticity = 0
         box2.friction = 0.5
         space.add(body2, box2)
-
+        
         shape = Square()
         shape.stretch_to_fit_height(1)
         shape.stretch_to_fit_width(1)
@@ -79,9 +77,11 @@ class PhysicTest(Scene):
         step = 1 / self.camera.frame_rate
         for t in range(int(run_time / step)):
             space.step(step)
-            shape_cons.append((body.position / 1000, body.angle))
-            shape2_cons.append((body2.position / 1000, body2.angle))
+            shape_cons.append((body.position/1000, body.angle))
+            shape2_cons.append((body2.position/1000, body2.angle))
 
         self.play(PhysicsBody(shape, shape_cons),
-                  PhysicsBody(shape2, shape2_cons),
-                  run_time=run_time)
+            PhysicsBody(shape2, shape2_cons),
+            run_time=run_time)
+        
+        self.play(FadeIn(shape))

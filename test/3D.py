@@ -271,7 +271,7 @@ class ColoredSurface(ThreeDScene):
         colors = color_gradient([BLUE_E,YELLOW,RED],100)
         colored_frame = surface_frame.copy()
         colored_surface = surface_origin.copy()
-        for ff, fs in zip(colored_frame,colored_surface):
+        for ff, fs in zip(colored_frame, colored_surface):
             f_z = ff.get_center()[-1]
             ff.set_color(colors[int((f_z-min(z))/z_1 * 90)])
             fs.set_color(colors[int((f_z-min(z))/z_1 * 90)])
