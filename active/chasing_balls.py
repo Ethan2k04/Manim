@@ -1,5 +1,6 @@
 from manimlib import *
 
+
 #utils
 def rate_func(decrease_factor=1):
     return lambda t: (1 / decrease_factor) * t ** 2
@@ -58,13 +59,13 @@ class Ball(VGroup):
 
 class ChasingBalls(VGroup):
     CONFIG = {
-        "balls": VGroup(),
-        "pos": [np.array([0., 4., 0.]), np.array([-2 * np.sqrt(3), -2, 0]), np.array([2 * np.sqrt(3), -2, 0])],
-        "factor": 4
+        "pos": [],
+        "factor": 1
     }
 
     def __init__(self, *mobjects, **kwargs):
         VGroup.__init__(self, **kwargs)
+        self.balls = VGroup()
         index = 0
         for mob in mobjects:
             self.balls.add(mob.move_to(self.pos[index]))
@@ -162,62 +163,35 @@ class Trail(VGroup):
         self.min_num = min_num
         self.rate = rate
         self.trail.add_updater(self.decrease_trail_num)
+
 #scene
 class ChasingBallsScene(Scene):
     CONFIG = {
-        "balls": VGroup(),
-        "traces": VGroup(),
-        "ball_radius": 0.1,
+        "ball_radius": 0.5,
         "num": 16,
-        "pos": discrete_points_on_circle(num=16, radius=2),
-        "circle_radius": 2,
-        "circle": True,
+        "circle_radius": 4,
         "balls_color": ["#00b09b", "#96c93d"],
-        "boundary_color": ORANGE,
-        "factor": 2
+        "factor": 2,
+        "pos": discrete_points_on_circle(num=16, radius=2),
+        "balls": VGroup(),
+        "trails": VGroup()
     }
-
-    def construct(self):
-        self.get_balls()
-        self.wait(10)
 
     def get_balls(self):
         colors = color_gradient(self.balls_color, self.num)
         index = 0
         for pos in self.pos:
-            self.balls.add(get_ball(colors[index], f"{index}", radius=self.ball_radius))
-            #self.traces.add(Trail(self.balls[index], trail_color=[colors[index-1], colors[index]]))
+            self.balls.add(get_ball(colors[index], "", radius=self.ball_radius))
+            self.trails.add(Trail(self.balls[index], trail_color=[colors[index-1], colors[index]]))
             index += 1
         chasing_balls = ChasingBalls(*self.balls, factor=self.factor, pos=self.pos)
         self.add(chasing_balls)
-        for p in self.traces:
-            self.add(p.trail)
+        for trail in self.trails:
+            self.add(trail.trail)
+            trail.start_trace()
         chasing_balls.start_move()
-    
-
-    def play_animated_boundary(self):
-        if self.circle:
-            boundary = Circle(radius=self.circle_radius)
-            boundary.move_to(ORIGIN)
-        else:
-            boundary = Polygon(*self.pos)
-        animated_boundary = AnimatedBoundary(boundary, colors=self.boundary_color)
-        self.add(animated_boundary)
 
 class ChasingBallsInCircuit(ChasingBallsScene):
-    CONFIG = {
-        "balls": VGroup(),
-        "traces": VGroup(),
-        "ball_radius": 0.01,
-        "num": 16,
-        "pos": discrete_points_on_circle(num=16, radius=3),
-        "circle_radius": 2,
-        "circle": True,
-        "balls_color": [RED_D, ORANGE, YELLOW_D, WHITE],
-        "boundary_color": [RED_D, ORANGE, YELLOW_D, WHITE],
-        "factor": 3
-    }
-
     def construct(self):
         self.get_balls()
         self.wait(5)
