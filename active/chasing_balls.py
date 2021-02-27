@@ -7,10 +7,10 @@ def rate_func(decrease_factor=1):
 def opacity_func(decrease_factor=1, increase_factor=1):
     return lambda t: increase_factor * 1500 * (1 - abs(decrease_factor * t) ** 0.0001)
 
-def get_ball(color, sign, radius=0.1):
+def get_ball(color, sign, radius=0.3):
     result = Circle(
         stroke_color=WHITE,
-        stroke_width=0.5,
+        stroke_width=0,
         fill_color=color,
         fill_opacity=0.8,
         radius=radius
@@ -167,13 +167,13 @@ class ChasingBallsScene(Scene):
     CONFIG = {
         "balls": VGroup(),
         "traces": VGroup(),
-        "ball_radius": 0.01,
+        "ball_radius": 0.1,
         "num": 16,
         "pos": discrete_points_on_circle(num=16, radius=2),
         "circle_radius": 2,
         "circle": True,
-        "balls_color": Ohhappiness,
-        "boundary_color": Ohhappiness,
+        "balls_color": ["#00b09b", "#96c93d"],
+        "boundary_color": ORANGE,
         "factor": 2
     }
 
@@ -186,15 +186,14 @@ class ChasingBallsScene(Scene):
         index = 0
         for pos in self.pos:
             self.balls.add(get_ball(colors[index], f"{index}", radius=self.ball_radius))
-            self.traces.add(Trail(self.balls[index], trail_color=[colors[index-1], colors[index]]))
+            #self.traces.add(Trail(self.balls[index], trail_color=[colors[index-1], colors[index]]))
             index += 1
         chasing_balls = ChasingBalls(*self.balls, factor=self.factor, pos=self.pos)
-        self.add(chasing_balls, self.balls)
+        self.add(chasing_balls)
         for p in self.traces:
             self.add(p.trail)
         chasing_balls.start_move()
-        for p in self.traces:
-            p.start_trace()
+    
 
     def play_animated_boundary(self):
         if self.circle:
@@ -205,7 +204,7 @@ class ChasingBallsScene(Scene):
         animated_boundary = AnimatedBoundary(boundary, colors=self.boundary_color)
         self.add(animated_boundary)
 
-class ChasingBallsInCircuit4(ChasingBallsScene):
+class ChasingBallsInCircuit(ChasingBallsScene):
     CONFIG = {
         "balls": VGroup(),
         "traces": VGroup(),
@@ -221,4 +220,4 @@ class ChasingBallsInCircuit4(ChasingBallsScene):
 
     def construct(self):
         self.get_balls()
-        self.wait(10)
+        self.wait(5)
