@@ -1,4 +1,4 @@
-from manimlib.imports import *
+from manimlib import *
 
 #utils
 def rate_func(decrease_factor=1):
@@ -15,7 +15,7 @@ def get_ball(color, sign, radius=0.1):
         fill_opacity=0.8,
         radius=radius
     )
-    sign = TexMobject(sign)
+    sign = Tex(sign)
     sign.set_stroke(WHITE, 1)
     sign.set_width(0.5 * result.get_width())
     sign.move_to(result)
