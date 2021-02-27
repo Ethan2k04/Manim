@@ -194,4 +194,4 @@ class ChasingBallsScene(Scene):
 class ChasingBallsInCircuit(ChasingBallsScene):
     def construct(self):
         self.get_balls()
-        self.wait(5)
+        self.wait(6)
