@@ -92,6 +92,7 @@ class ChasingBalls(VGroup):
     def start_move(self):
         self.add_updater(self.update_balls)
 
+## Trail group fails to appear
 class Trail(VGroup):
     CONFIG = {
         'max_width': 5,
@@ -141,7 +142,6 @@ class Trail(VGroup):
         trail.become(self.create_path())
 
     def start_trace(self):
-        # self.trail.add_updater(self.update_trail)
         self.trail.add_updater(self.update_path)
 
     def stop_trace(self):
@@ -191,7 +191,10 @@ class ChasingBallsScene(Scene):
             trail.start_trace()
         chasing_balls.start_move()
 
-class ChasingBallsInCircuit(ChasingBallsScene):
+class Ohhappiness(ChasingBallsScene):
+    CONFIG = {
+        "balls_color": ["#00b09b", "#96c93d", "#00b09b"]
+    }
     def construct(self):
         self.get_balls()
         self.wait(6)
