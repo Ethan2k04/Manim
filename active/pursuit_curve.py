@@ -198,3 +198,18 @@ class Ohhappiness(ChasingBallsScene):
     def construct(self):
         self.get_balls()
         self.wait(6)
+
+class ShroomHaze(Ohhappiness):
+    CONFIG = {
+        "balls_color": ["#5C258D", "#4389A2", "#5C258D"]
+    }
+
+class ElectricViolet(Ohhappiness):
+    CONFIG = {
+        "balls_color": ["#4776E6", "#8E54E9", "#4776E6"]
+    }
+
+class ElectricViolet_Ohhappiness(Ohhappiness):
+    CONFIG = {
+        "balls_color": ["#4776E6", "#8E54E9", "#00b09b", "#96c93d"]
+    }
