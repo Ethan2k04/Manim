@@ -1,4 +1,4 @@
-from manimlib.imports import *
+from manimlib import *
 from my_program.utils.ThreeDVector import ThreeDVector
 # old version
 def tuplify(obj):

@@ -15,11 +15,11 @@ camera_qualities:
     resolution: 3840x2160
 directories:
   mirror_module_path: false
-  output: /Users/ytj/manim
-  raster_images: /Users/ytj/manim/images/rasters
-  sounds: /Users/ytj/manim/sounds
-  temporary_storage: /Users/ytj/manim/temporary files
-  vector_images: /Users/ytj/manim/images/vector
+  output: /Users/ytj/manim-master/
+  raster_images: /Users/ytj/manim-master/images/rasters/
+  sounds: /Users/ytj/manim-master/sounds/
+  temporary_storage: /Users/ytj/manim-master/temporary files/
+  vector_images: /Users/ytj/manim-master/images/vector/
 style:
   background_color: '#000000'
   font: Consolas
