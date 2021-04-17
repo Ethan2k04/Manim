@@ -1,54 +1,96 @@
+import random
+
+import numpy as np
 from manimlib import *
+
+def boltzmann_function(v_range):
+    v_list = []
+    for v in range(v_range):
+        possibility = 10 * v ** 2 * np.exp(-0.1 * v**2)
+        for p in range(round(possibility)):
+            v_list.append(v)
+
+    return v_list
 
 class RandomWalker(Dot):
 
-    def __init__(self, num=314, factor=1.0, **kwargs):
+    def __init__(self, num=314, v_range=10, **kwargs):
         self.num = num
-        self.factor = factor
+        self.v_range = v_range
+        self.v_list = boltzmann_function(v_range)
+        self.dir_list = []
         self.generate_direction()
-        self.direction = None
-        self.get_direction()
+        self.velocity = np.array([0, 0, 0])
+        self.get_velocity()
         super().__init__(**kwargs)
 
     def generate_direction(self):
-        self.dir_list = [np.array(
-            [np.cos(2 * PI * (t/self.num)),
-             np.sin(2 * PI * (t/self.num)),
-             0]) for t in range(self.num)]
+        self.dir_list = [complex_to_R3(np.exp(1j * 2 * PI * (t/self.num)))
+                         for t in range(self.num)]
 
-    def get_direction(self):
-        direction = self.factor * self.dir_list[random.randint(0, self.num-1)]
-        #print(direction)
-        self.direction = direction
+    def get_velocity(self):
+        velocity = 0.1 * self.v_list[random.randint(0, len(self.v_list)-1)] * self.dir_list[random.randint(0, self.num-1)]
+        self.velocity = velocity
 
     def update_color(self):
         pass
 
-class RandomWalkerScene1(Scene):
-    def construct(self):
-        plane = NumberPlane()
-        #self.add(plane)
-        walker = RandomWalker(factor=0.2)
-        for i in range(20):
-            walker.get_direction()
-            self.play(walker.shift, walker.direction, run_time=0.1)
+class BoltzmannLaw(Axes):
+    def __init__(self, mass=1, temperature=273, **kwargs):
+        k = 0.001
+        self.c1 = mass / (2 * k * temperature)
+        self.c2 = np.sqrt(self.c1 / PI)
+        self.function = lambda u: self.c2 * np.exp(- self.c1 * u**2)
+        self.x_range = [-4, 4, 0.25]
+        super().__init__(self.x_range, **kwargs)
+        self.graph = self.get_graph(self.function)
+        self.add(self.graph)
 
-class RandomWalkerScene2(Scene):
+class Test(Scene):
+    def construct(self):
+        a = BoltzmannLaw()
+        t = ValueTracker(273)
+        a.add_updater(lambda m: m.become(BoltzmannLaw(temperature=t.get_value())))
+        self.play(FadeIn(a))
+        self.play(ApplyMethod(t.set_value, 100))
+
+class RandomWalkerScene(Scene):
     CONFIG = {
         "factor": 0.0,
         "rate_func": linear,
         "dt": 0.1,
-        "run_time": 10
+        "run_time": 5,
+        "box_ratio_to_screen": 0.3
     }
 
     def construct(self):
-        walker_group = RandomWalker(factor=self.factor).get_grid(10, 10, height=4)
+        walker_group = RandomWalker().get_grid(10, 10, height=4)
+        colors = color_gradient([BLUE, ORANGE, RED], 10)
+        for i in range(int(self.run_time/self.dt)):
+            for sub in walker_group:
+                sub.get_velocity()
+                index = int(100 * (get_norm(sub.velocity)/sub.v_range))
+                print(index)
+                sub.set_color(colors[index])
+            self.play(*[ApplyMethod(sub.shift, sub.velocity) for sub in walker_group],
+                      rate_func=self.rate_func,
+                      run_time=self.dt)
+
+class RandomWalkerSceneWithContainer(Scene):
+    CONFIG = {
+        "factor": 0.0,
+        "rate_func": linear,
+        "dt": 0.1,
+        "run_time": 10,
+        "box_ratio_to_screen": 0.3
+    }
+
+    def construct(self):
+        walker_group = RandomWalker().get_grid(10, 10, height=4)
         walker_group.set_color(BLUE)
-        #walker_group.set_submobject_colors_by_gradient(BLUE, RED)
+        walker_group.set_submobject_colors_by_gradient(BLUE, RED)
         colors = color_gradient([BLUE, ORANGE, RED], 101)
         back_ground_colors = color_gradient([BLUE_A, BLUE_E], 101)
-        image = ImageMobject("sea.jpg")
-        self.add(image)
         back_ground = self.container_box()
         back_ground.set_fill(opacity=0.4)
         self.add(back_ground)
@@ -74,12 +116,14 @@ class RandomWalkerScene2(Scene):
         #               run_time=self.dt)
 
     def container_box(self):
-        inside = Polygon(np.array([4.0, 2.0, 0.0]),
-                              np.array([4.0, -2.0, 0.0]),
-                              np.array([-4.0, -2.0, 0.0]),
-                              np.array([-4.0, 2.0, 0.0]))
-        vertices = inside.get_vertices()
-
+        width = FRAME_X_RADIUS * self.box_ratio_to_screen
+        height = FRAME_Y_RADIUS * self.box_ratio_to_screen
+        in_wall = Polygon(np.array([width, height, 0.0]),
+                              np.array([width, -height, 0.0]),
+                              np.array([-width, -height, 0.0]),
+                              np.array([-width, height, 0.0]))
+        vertices = in_wall.get_vertices()
+        right_wall = None
 #TODO 黄金分割比的容器且自动生成
         width = self.camera.get_frame_width()/2
         height = self.camera.get_frame_height()/2
@@ -90,9 +134,9 @@ class RandomWalkerScene2(Scene):
                          LEFT * width + DOWN * height)
         upside = Polygon(np.array([-4.0, 2.0, 0.0]), np.array([2.0, 1.0, 0.0]), RIGHT * width + UP * height,
                          LEFT * width + UP * height)
-        return VGroup(inside, upside, rightside, downside, leftside)
+        return VGroup(upside, rightside, downside, leftside)
 
-class RandomWalkerScene3(RandomWalkerScene2):
+class RandomWalkerScene3(RandomWalkerScene):
     CONFIG = {
         "factor": 0.01,
         "rate_func": linear,
@@ -100,7 +144,7 @@ class RandomWalkerScene3(RandomWalkerScene2):
         "run_time": 10
     }
 
-class RandomWalkerScene4(RandomWalkerScene2):
+class RandomWalkerScene4(RandomWalkerScene):
     CONFIG = {
         "factor": 2,
         "rate_func": linear,
