@@ -46,30 +46,55 @@ class RandomWalker(Dot):
     def update_color(self):
         pass
 
-
-class BoltzmannLaw(Axes):
-
-    ##TODO should be integrate to RandomWalker class
-
-    def __init__(self, mass=1, temperature=273, **kwargs):
-        k = 0.001
-        self.c1 = mass / (2 * k * temperature)
-        self.c2 = np.sqrt(self.c1 / PI)
-        self.function = lambda u: self.c2 * np.exp(- self.c1 * u ** 2)
-        self.x_range = [-4, 4, 0.25]
-        super().__init__(self.x_range, **kwargs)
-        self.graph = self.get_graph(self.function)
-        self.add(self.graph)
-
-
-class Test(Scene):
+class DistributionGraphScene(Scene):
+    CONFIG = {
+        "x_range": [-1, 20],
+        "y_range": [-1, 3],
+    }
     def construct(self):
-        a = BoltzmannLaw()
-        t = ValueTracker(273)
-        a.add_updater(lambda m: m.become(BoltzmannLaw(temperature=t.get_value())))
-        self.play(FadeIn(a))
-        self.play(ApplyMethod(t.set_value, 100))
+        self.data_list = []
+        self.axes = Axes(x_range=self.x_range, y_range=self.y_range)
+        self.add(self.axes)
+        self.digest_data()
+        self.graph = self.get_riemann_rectangles(x_range=[0, self.x_range[-1]])
+        self.play(ShowCreation(self.graph))
 
+    def digest_data(self):
+        for i in range(self.x_range[-1]):
+            self.data_list.append(2 * i**2 * np.exp(- 0.5 * i))
+
+    def get_riemann_rectangles(self,
+                               x_range=None,
+                               input_sample_type="right",
+                               stroke_width=1,
+                               stroke_color=BLACK,
+                               fill_opacity=1,
+                               colors=(BLUE, GREEN)):
+
+        rects = []
+        xs = np.arange(*x_range)
+        for x0, x1 in zip(xs, xs[1:]):
+            if input_sample_type == "left":
+                sample = x0
+            elif input_sample_type == "right":
+                sample = x1
+            elif input_sample_type == "center":
+                sample = 0.5 * x0 + 0.5 * x1
+            else:
+                raise Exception("Invalid input sample type")
+            height = self.data_list[round(sample)]
+            rect_width = self.axes.x_axis.get_unit_size() * (x1 - x0)
+            rect = Rectangle(width=rect_width, height=height)
+            rect.move_to(self.axes.c2p(x0, 0), DL)
+            rects.append(rect)
+        result = VGroup(*rects)
+        result.set_submobject_colors_by_gradient(*colors)
+        result.set_style(
+            stroke_width=stroke_width,
+            stroke_color=stroke_color,
+            fill_opacity=fill_opacity,
+        )
+        return result
 
 class RandomWalkerScene(Scene):
     CONFIG = {
