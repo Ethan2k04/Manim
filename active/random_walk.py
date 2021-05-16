@@ -5,15 +5,14 @@ from manimlib import *
 
 
 def boltzmann_function(v_range, temperature):
-    v_list = []
+    v_map = dict()
     ##TODO some coefficient should be add
     for v in range(v_range):
         possibility = 100 * np.power(temperature, -3 / 2) * v ** 2 * np.exp(-1 * v ** 2 / temperature)
-        for p in range(round(possibility)):
-            v_list.append(v)
-    if not v_list:
-        v_list = [0]
-    return v_list
+        v_map[str(v)] = possibility
+    if not v_map:
+        v_map = {"0": 0}
+    return v_map
 
 
 class RandomWalker(Dot):
@@ -24,22 +23,34 @@ class RandomWalker(Dot):
         self.num = 314
         self.temperature = 1
         self.v_range = v_range
-        self.v_list = boltzmann_function(v_range, self.temperature)
+        self.v_map = boltzmann_function(v_range, self.temperature)
+        self.v_list = []
+        self.transform_list_to_map()
         self.dir_list = []
         self.generate_direction()
         self.velocity = np.array([0, 0, 0])
         self.get_velocity()
         super().__init__(**kwargs)
 
+    def transform_list_to_map(self):
+        for key, value in self.v_map.items():
+            for i in range(round(value)):
+                self.v_list.append(int(key))
+
     def update_v_list(self):
-        self.v_list = boltzmann_function(self.v_range, self.temperature)
+        self.v_map = boltzmann_function(self.v_range, self.temperature)
+        self.v_list = []
+        for key, value in self.v_map.items():
+            for i in range(round(value)):
+                self.v_list.append(int(key))
 
     def generate_direction(self):
         self.dir_list = [complex_to_R3(np.exp(1j * 2 * PI * (t / self.num)))
                          for t in range(self.num)]
 
     def get_velocity(self):
-        velocity = 0.1 * self.v_list[random.randint(0, len(self.v_list) - 1)] * self.dir_list[
+        print(self.v_list)
+        velocity = 0.01 * self.v_list[random.randint(0, len(self.v_list) - 1)] * self.dir_list[
             random.randint(0, self.num - 1)]
         self.velocity = velocity
 
@@ -48,23 +59,34 @@ class RandomWalker(Dot):
 
 class DistributionGraphScene(Scene):
     CONFIG = {
-        "x_range": [-1, 20],
+        "x_range": [-1, 50],
         "y_range": [-1, 3],
     }
     def construct(self):
-        self.data_list = []
+        self.temperature = ValueTracker(273)
+        self.digest_data()
         self.axes = Axes(x_range=self.x_range, y_range=self.y_range)
         self.add(self.axes)
-        self.digest_data()
-        self.graph = self.get_riemann_rectangles(x_range=[0, self.x_range[-1]])
+        self.graph = self.get_riemann_rectangles(x_range=[0, self.x_range[-1]], data_map=self.data_map_init)
         self.play(ShowCreation(self.graph))
+        self.wait()
+        self.add_graph_updater()
+        self.play(ApplyMethod(self.temperature.set_value, 600, run_time=3))
+        self.play(ApplyMethod(self.temperature.set_value, 100, run_time=3))
 
     def digest_data(self):
-        for i in range(self.x_range[-1]):
-            self.data_list.append(2 * i**2 * np.exp(- 0.5 * i))
+        self.data_map_init = boltzmann_function(v_range=self.x_range[-1], temperature=self.temperature.get_value())
+
+    def add_graph_updater(self):
+        self.graph.add_updater(lambda m: m.become(self.get_riemann_rectangles(x_range=[0, self.x_range[-1]],
+                                                                              data_map=boltzmann_function(
+                                                                              v_range=self.x_range[-1],
+                                                                              temperature=self.temperature.get_value()
+                                                                              ))))
 
     def get_riemann_rectangles(self,
                                x_range=None,
+                               data_map=None,
                                input_sample_type="right",
                                stroke_width=1,
                                stroke_color=BLACK,
@@ -82,7 +104,7 @@ class DistributionGraphScene(Scene):
                 sample = 0.5 * x0 + 0.5 * x1
             else:
                 raise Exception("Invalid input sample type")
-            height = self.data_list[round(sample)]
+            height = 2 * data_map[str(round(sample))]
             rect_width = self.axes.x_axis.get_unit_size() * (x1 - x0)
             rect = Rectangle(width=rect_width, height=height)
             rect.move_to(self.axes.c2p(x0, 0), DL)
@@ -107,30 +129,7 @@ class RandomWalkerScene(Scene):
 
     def construct(self):
         walker_group = RandomWalker(v_range=150).get_grid(10, 10, height=4)
-        colors = color_gradient([BLUE, RED], 200)
-        for i in range(int(self.run_time / self.dt)):
-            for sub in walker_group:
-                sub.update_v_list()
-                sub.get_velocity()
-                index = int(500 * (100 * get_norm(sub.velocity) / sub.v_range))
-                print(index)
-                sub.set_color(colors[index])
-                sub.temperature += 5
-            self.play(*[ApplyMethod(sub.shift, sub.velocity) for sub in walker_group],
-                      rate_func=self.rate_func,
-                      run_time=self.dt)
-
-        for i in range(int(self.run_time / self.dt)):
-            for sub in walker_group:
-                sub.update_v_list()
-                sub.get_velocity()
-                index = int(500 * (100 * get_norm(sub.velocity) / sub.v_range))
-                print(index)
-                sub.set_color(colors[index])
-            self.play(*[ApplyMethod(sub.shift, sub.velocity) for sub in walker_group],
-                      rate_func=self.rate_func,
-                      run_time=self.dt)
-
+        colors = color_gradient([BLUE, RED], 120)
         for i in range(int(self.run_time / self.dt)):
             for sub in walker_group:
                 sub.update_v_list()
