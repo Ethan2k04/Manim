@@ -209,15 +209,57 @@ class ReconstructTheQuestion(Scene):
 class ParabolaProof(Scene):
     pass
 
-class EqualEnergyCircleProof(Scene):
-    def construct(self):
-        axes = Axes((-5, 5), (-5, 5))
-        axes.add_coordinate_labels()
+def calculate_ellipse_para(KE, mass):
+    return np.sqrt(2 * (KE / mass))
+
+class EqualEnergyGraphProof(Scene):
+    CONFIG = {"init_ela": 1,
+              "init_a2b": 5 / 3,
+              "m1": 1,
+              "m2": 2,
+              "KE": 3,
+              "MM": 3
+              }
+
+    def get_axes(self):
+        self.axes = axes = Axes((-5, 5), (-3, 3))
         self.add(axes)
 
-        ela_factor = ValueTracker(1)
+    def calc_ellipse_para(self):
+        a = self.a = calculate_ellipse_para(self.KE, self.m1)
+        b = self.b = calculate_ellipse_para(self.KE, self.m2)
 
-        eec = ParametricCurve(lambda t: np.array(ela_factor.get_value() * complex_to_R3(np.exp(1j * t))),t_range=(0, 2 * PI))
-        self.play(Write(eec, lag_ratio=0.01, run_time=1))
-        eec.add_updater(lambda m: m.become(ParametricCurve(lambda t: np.array(ela_factor.get_value() * complex_to_R3(np.exp(1j * t))),t_range=(0, 2 * PI))))
-        self.play(ApplyMethod(ela_factor.set_value, 3), run_time=3)
+    def add_para_tracker(self):
+        self.ela_factor = ValueTracker(self.init_ela)
+
+    def get_ee_graph(self):
+        ee_graph = ParametricCurve(lambda t: self.ela_factor.get_value() *
+                                             self.axes.c2p(self.a * np.cos(t), self.b * np.sin(t)),
+                                             t_range=(0, 2 * PI))
+        return ee_graph
+
+    def get_em_line(self):
+        side = np.sqrt(self.m1 **2 + self.m2 **2)
+        cosine = self.m2 / side
+        sine = -self.m1 / side
+        centre = [self.MM/(2 * self.m1), self.MM/(2 * self.m2)]
+        em_line = ParametricCurve(lambda t: np.array(
+            [centre[0] + t * cosine,
+             centre[1] + t * sine,
+             0]), t_range=(-4, 4))
+        return em_line
+
+class EqualEnergyEllipseProof(EqualEnergyGraphProof):
+    CONFIG = {"m1": 2,
+              "m2": 2}
+
+    def construct(self):
+        self.get_axes()
+        self.add_para_tracker()
+        self.calc_ellipse_para()
+        ee_ellipse = self.get_ee_graph()
+        em_line = self.get_em_line()
+        self.play(Write(ee_ellipse))
+        self.play(Write(em_line))
+        ee_ellipse.add_updater(lambda m: m.become(self.get_ee_graph()))
+        self.play(ApplyMethod(self.ela_factor.set_value, 0.5))
