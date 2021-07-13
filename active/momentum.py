@@ -213,53 +213,82 @@ def calculate_ellipse_para(KE, mass):
     return np.sqrt(2 * (KE / mass))
 
 class EqualEnergyGraphProof(Scene):
-    CONFIG = {"init_ela": 1,
-              "init_a2b": 5 / 3,
-              "m1": 1,
+    CONFIG = {"m1": 1,
               "m2": 2,
-              "KE": 3,
-              "MM": 3
+              "kinetic_energy": 3,
+              "momentum": 3
               }
 
     def get_axes(self):
-        self.axes = axes = Axes((-5, 5), (-3, 3))
+        self.axes = axes = NumberPlane()
         self.add(axes)
 
-    def calc_ellipse_para(self):
-        a = self.a = calculate_ellipse_para(self.KE, self.m1)
-        b = self.b = calculate_ellipse_para(self.KE, self.m2)
-
     def add_para_tracker(self):
-        self.ela_factor = ValueTracker(self.init_ela)
+        self.KE = ValueTracker(self.kinetic_energy)
 
     def get_ee_graph(self):
-        ee_graph = ParametricCurve(lambda t: self.ela_factor.get_value() *
-                                             self.axes.c2p(self.a * np.cos(t), self.b * np.sin(t)),
+        if self.shape == "ellipse":
+            a = calculate_ellipse_para(self.KE.get_value(), self.m1)
+            b = calculate_ellipse_para(self.KE.get_value(), self.m2)
+        if self.shape == "circle":
+            a = b = np.sqrt(2 * self.KE.get_value())
+        ee_graph = ParametricCurve(lambda t: self.axes.c2p(a * np.cos(t), b * np.sin(t)),
                                              t_range=(0, 2 * PI))
         return ee_graph
 
     def get_em_line(self):
-        side = np.sqrt(self.m1 **2 + self.m2 **2)
-        cosine = self.m2 / side
-        sine = -self.m1 / side
-        centre = [self.MM/(2 * self.m1), self.MM/(2 * self.m2)]
-        em_line = ParametricCurve(lambda t: np.array(
-            [centre[0] + t * cosine,
+        if self.shape == "ellipse":
+            side = np.sqrt(self.m1 ** 2 + self.m2 ** 2)
+            cosine = self.m2 / side
+            sine = -self.m1 / side
+            centre = [self.momentum /(2 * self.m1), self.momentum /(2 * self.m2)]
+            em_line = ParametricCurve(lambda t: np.array(
+                [centre[0] + t * cosine,
+             centre[1] + t * sine,
+             0]), t_range=(-4, 4))
+        if self.shape == "circle":
+            side = self.m1 + self.m2
+            cosine = np.sqrt(self.m2) / side
+            sine = -np.sqrt(self.m1) / side
+            centre = [self.momentum / (2 * np.sqrt(self.m1)), self.momentum / (2 * np.sqrt(self.m2))]
+            em_line = ParametricCurve(lambda t: np.array(
+                [centre[0] + t * cosine,
              centre[1] + t * sine,
              0]), t_range=(-4, 4))
         return em_line
 
 class EqualEnergyEllipseProof(EqualEnergyGraphProof):
     CONFIG = {"m1": 2,
-              "m2": 2}
+              "m2": 4,
+              "kinetic_energy": 6,
+              "momentum": 6,
+              "shape": "ellipse"
+              }
 
     def construct(self):
         self.get_axes()
         self.add_para_tracker()
-        self.calc_ellipse_para()
         ee_ellipse = self.get_ee_graph()
         em_line = self.get_em_line()
         self.play(Write(ee_ellipse))
         self.play(Write(em_line))
         ee_ellipse.add_updater(lambda m: m.become(self.get_ee_graph()))
-        self.play(ApplyMethod(self.ela_factor.set_value, 0.5))
+        self.play(ApplyMethod(self.KE.set_value, 3))
+
+#transformation: v_ = sqrt(m) * v
+class EqualEnergyCircleProof(EqualEnergyGraphProof):
+    CONFIG = {"m1": 2,
+              "m2": 4,
+              "kinetic_energy": 6,
+              "momentum": 6,
+              "shape": "circle"
+              }
+    def construct(self):
+        self.get_axes()
+        self.add_para_tracker()
+        ee_ellipse = self.get_ee_graph()
+        em_line = self.get_em_line()
+        self.play(Write(ee_ellipse))
+        self.play(Write(em_line))
+        ee_ellipse.add_updater(lambda m: m.become(self.get_ee_graph()))
+        self.play(ApplyMethod(self.KE.set_value, 3))
