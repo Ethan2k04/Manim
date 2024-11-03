@@ -1,8 +1,8 @@
-<img src="https://user-images.githubusercontent.com/60817795/111877717-7fd04500-89df-11eb-97b1-e946ae36fa87.png" alt="社团logo small" width="150">
-
 # 我的 Manim 仓库
 
 欢迎来到我的 Manim 仓库！这是一个使用知名数学博主 3Blue1Brown 开发的 Manim 动画库制作的数学动画合集。这个库主要用于支持我在 B 站的科普视频制作，让复杂的数学概念以更直观、生动的方式呈现给观众。
+
+<img src="https://user-images.githubusercontent.com/60817795/111877717-7fd04500-89df-11eb-97b1-e946ae36fa87.png" alt="社团logo small" width="150">
 
 ## 目录
 
